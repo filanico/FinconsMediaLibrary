@@ -21,6 +21,17 @@ class Record {
         this.#id = Record.ID++
     }
 
+    /**
+     * 
+     * @param {Record} record 
+     */
+    update(record) {
+        for( key in record ) {
+            console.log(key);
+            process.exit();
+        }
+    }
+
     static _isLegalContentType(_contentType) {
         return Object.values(Record.CONTENT_TYPES).includes(_contentType);
     }
@@ -86,6 +97,13 @@ class Record {
     toJson() {
         return this._getJsonObject()
     }
+
+    static fromJson(json) {
+        return (new Record())
+            .setOriginalTitle(json.originalTitle)
+            .setTitle(json.title)
+            .setProductionYear(json.productionYear)
+    }
 }
 
 class Episode extends Record {
@@ -96,82 +114,38 @@ class Episode extends Record {
 }
 
 class MultiEpisodesContent extends Record {
-    #episodes = []
+    /** @type Records */
+    #episodes = new Records()
+
+    get episodes() {
+        return this.#episodes
+    }
+
     constructor({ title = undefined, originalTitle = undefined, contentType = undefined, productionYear = undefined }) {
         super({ title, originalTitle, contentType, productionYear });
         this._setContentType(Record.CONTENT_TYPES.SEASON)
     }
 
-    // get episodes() {
-    //     return this.#episodes;
-    // }
-    /**
-     * 
-     * @returns {[Episode]}
-     */
-    getEpisodes() {
-        return this.#episodes
-    }
-    /**
-     * 
-     * @param {Episode} _episode 
-     */
-    addEpisode(_episode) {
-        this.#episodes.push(_episode);
-    }
-    /**
-     * 
-     * @param {Episode} _episode 
-     */
-    removeEpisode(_episode) {
-        const cleared = this.#episodes
-            .filter(foo => !this.#episodes.includes(_episode))
-        this.#episodes = [...cleared]
-    }
-
     _getJsonObject() {
-        return { ...super._getJsonObject(), episodes: [...this.#episodes.map(e => e._getJsonObject())] }
+        return { ...super._getJsonObject() }
     }
 }
 
 class MultiSeasonsContent extends Record {
-    #seasons = []
+    /** @type Records */
+    #seasons = new Records()
+
+    get seasons() {
+        return this.#seasons
+    }
 
     constructor({ title = undefined, originalTitle = undefined, contentType = undefined, productionYear = undefined }) {
         super({ title, originalTitle, contentType, productionYear });
         this._setContentType(Record.CONTENT_TYPES.SERIES)
     }
-    /**
-     * 
-     * @param {*} param0 
-     * @returns {[Season]}
-     */
-    getSeasons() {
-        return this.#seasons
-    }
-    /**
-     * 
-     * @returns {[MultiSeasonsContent]}
-     */
-    addSeason(_season) {
-        this.#seasons.push(_season);
-        return this;
-    }
-    /**
-     * 
-     * @returns {[MultiSeasonsContent]}
-     */
-    addSeasons(_seasons) {
-        _seasons.forEach(s => this.addSeasons(s))
-        return this;
-    }
-    removeSeason(_season) {
-        const cleared = this.#seasons
-            .filter(foo => !this.#seasons.includes(_season))
-        this.#seasons = [...cleared]
-    }
+
     _getJsonObject() {
-        return { ...super._getJsonObject(), seasons: [...this.#seasons.map(e => e._getJsonObject())] }
+        return { ...super._getJsonObject(), seasons: [...this.toJson()] }
     }
 }
 
@@ -199,6 +173,115 @@ class Series extends MultiSeasonsContent {
 class TvShow extends MultiSeasonsContent {
 }
 
+class Records {
+    /** @type {[Record]} */
+    #items = null
+
+    /**
+     * 
+     * @param {[Record]} _items 
+     */
+    constructor(_items = []) {
+        this.#items = [..._items]
+    }
+
+    /**
+     * @return {[Record]}
+     */
+    all() {
+        return this.#items
+    }
+
+    /**
+     * 
+     * @return {[Records]}
+     * @param {number} id 
+     */
+    get(id) {
+        let [item] = this.#items.filter(item => item.id === id)
+        return item;
+    }
+
+    /**
+     * 
+     * @param {*} param0 
+     * @returns {[Record]}
+     */
+    find({ title = undefined, originalTitle = undefined, productionYear = undefined }) {
+        return this.#items.filter(item => {
+            return (
+                (title !== undefined && item.title === title) ||
+                (originalTitle !== undefined && item.originalTitle === originalTitle) ||
+                (productionYear !== undefined && item.productionYear === productionYear) ||
+                false
+            )
+        })
+    }
+
+    /**
+     * 
+     * @return {Records}
+     * @param {Record} record 
+     */
+    add(record) {
+        this.#items.push(record)
+        return this
+    }
+
+    /**
+     * 
+     * @return {Records}
+     */
+    clear() {
+        this.#items = []
+        return this
+    }
+
+    /**
+     * @return {Records}
+     * @param {Record|number} recordOrId 
+    */
+    remove(recordOrId) {
+        let id = recordOrId instanceof Record ? recordOrId.id : recordOrId;
+        this.#items = this.#items.filter(item => item.id !== id)
+        return this
+    }
+
+    find() { }
+
+    /**
+     * 
+     * @return {Records}
+     * @param {[Record]} records 
+    */
+    batchAdd(records) {
+        records.forEach(record => this.add(record))
+        return this
+    }
+
+    /**
+     * 
+     * @return {Records}
+     * @param {[Record]} records 
+    */
+    batchRemove(records) {
+        records.forEach(record => this.remove(record))
+        return this
+    }
+
+    /**
+     * 
+     * @param {[Record]} records 
+    */
+    batchUpdate() { }
+
+    toJson() {
+        return this.#items.map(item => item.toJson())
+    }
+
+
+
+}
 
 
 
