@@ -1,0 +1,16 @@
+{
+  "name": "finconsmedialibrary",
+  "version": "1.0.0",
+  "description": "[Implementare] un’applicazione NodeJS che disponga di Restful API per gestire la CRUD (create, read, update, delete) dei seguenti metadati di un catalogo di contenuti video: \\*\\* title : string content-type: [SERIES, SEASON, EPISODE, MOVIE, TV SHOW] original-title: string production-year: int con interfaccia di tipo Rest Service che soddisfi i seguenti requisiti :",
+  "main": "StorageService.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.18.2",
+    "fs": "^0.0.1-security"
+  }
+}
