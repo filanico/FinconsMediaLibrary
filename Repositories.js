@@ -1,6 +1,7 @@
 const fs = require('fs');
-const { Series, MultiSeasonsContent, Season, TvShow, Movie, Record, Episode, MultiEpisodesContent, Records } = require('./MediaItems');
-
+const { Series, MultiSeasonsContent, Season, TvShow, Movie, Episode, MultiEpisodesContent } = require('./MediaItems');
+const { Record } = require('./Record');
+const { Records } = require('./Records');
 class AbstractRepository {
 
     /** @type {Records} */
