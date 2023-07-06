@@ -1,47 +1,61 @@
+require('express-group-routes');
 const express = require('express');
+const axios = require('axios')
 const app = express();
-const { Season, Series, Episode } = require('./MediaItems');
-const { Repository } = require('./Repository');
+const { EpisodesRepository, MoviesRepository, SeasonsRepository, SeriesRepository, TvShowsRepository, AbstractRepository } = require('./Repositories');
+const { StorageService } = require('./StorageService');
+const { Season } = require('./MediaItems');
+
 const port = 3002;
 const DEFAULT_DB_FILEPATH = 'repository.json';
 
 
-let repository = new Repository(DEFAULT_DB_FILEPATH);
-// let series = new Series({ title: "Rookie" })
-// repository.createSeries({
-//     title: "Rookie"
-// })
-// repository.persist()
+let storageService = new StorageService(DEFAULT_DB_FILEPATH);
 
-// let [rookie] = repository.getSeries({ productionYear: 0 });
-let rookie = new Series({ title: "Rookie" })
-// rookie.getSeasons()[0].removeEpisode()
+/** @type {AbstractRepository} */
+let catalog = null;
+/** @type {EpisodesRepository} */
+let episodes = null;
+/** @type {SeasonsRepository} */
+let seasons = null;
+/** @type {SeriesRepository} */
+let series = null;
+/** @type {MoviesRepository} */
+let movies = null;
+/** @type {TvShowsRepository} */
+let tvShows = null;
 
-let seasonOne = new Season({ title: "Rookie stagione 01" })
 
-let episode = new Episode()
-episode.setTitle("01 Pilot").setOriginalTitle("01 The beginning").setProductionYear(2001)
-
-seasonOne.addEpisode(episode)
-rookie.addSeason(seasonOne)
-
-repository.deleteSeries(rookie);
-console.log(rookie.title);
-// rookie.addSeason(seasonOne);
-// repository.persist()
-
-// console.log(rookie);
-// repository.movies.findByTitle("Rookie");
 app.use(express.json())
-app.get("/series", (req, res) => {
-    return res.json(repository.getSeries())
-})
-app.post("/series", (req, res) => {
-    let payload = req.body;
-    repository.createSeries
-    res.json(payload);
-})
+
+
+require('./routes/series')(app)
+require('./routes/seasons')(app)
+require('./routes/tvshows')(app)
+require('./routes/movies')(app)
+require('./routes/episodes')(app)
+
 
 app.listen(port, () => {
+    catalog = new AbstractRepository();
+    episodes = new EpisodesRepository();
+    seasons = new SeasonsRepository();
+    series = new SeriesRepository();
+    movies = new MoviesRepository()
+    tvShows = new TvShowsRepository()
+
+    axios.post("http://localhost:" + port + "/episodes/create", { title: "La fine dell'inizio" })
+    axios.post("http://localhost:" + port + "/seasons/create", { title: "01 Breaking Bad" })
+    axios.post("http://localhost:" + port + "/series/create", { title: "Breaking bad", productionYear: 2010 })
+    axios.post("http://localhost:" + port + "/movies/create", { title: "Il Padrino", productionYear: 2010 })
+
+    axios.post("http://localhost:" + port + "/series/3/seasons", { title: "01 Breaking Bad created by http call" })
+    axios.post("http://localhost:" + port + "/series/3/seasons/2")
+    axios.delete("http://localhost:" + port + "/series/3/seasons/2")
+
+
+    // axios.post("http://localhost:" + port + "/tv-shows/create", { title: "The late show", productionYear: 2010 })
+
+
     console.log("MediaServer listening on port " + port);
 })

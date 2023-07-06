@@ -13,12 +13,17 @@ class Record {
     #originalTitle = undefined
     #contentType = undefined
     #productionYear = undefined
-    constructor(_title = undefined, _originalTitle = undefined, _contentType = undefined, _productionYear = undefined) {
-        this.#title = _title;
-        this.#originalTitle = _originalTitle;
-        this.#productionYear = _productionYear;
-        this.contentType = _contentType;
-        this.#id = Record.ID++
+
+    constructor({ title = undefined, originalTitle = undefined, contentType = undefined, productionYear = undefined, id = undefined }) {
+        this.#title = title;
+        this.#originalTitle = originalTitle;
+        this.#productionYear = productionYear;
+        this.contentType = contentType ?? this._getContentType();
+        this.id = id
+    }
+
+    _getContentType() {
+        return Record.CONTENT_TYPES.ALL;
     }
 
     /**
@@ -26,7 +31,7 @@ class Record {
      * @param {Record} record 
      */
     update(record) {
-        for( key in record ) {
+        for (key in record) {
             console.log(key);
             process.exit();
         }
@@ -60,12 +65,24 @@ class Record {
         return this.#id;
     }
 
+    set id(_newId) {
+        this.#id = _newId ?? Record.ID++
+    }
+
     get contentType() {
         return this.#contentType;
     }
 
     get title() {
         return this.#title;
+    }
+
+    get originalTitle() {
+        return this.#originalTitle;
+    }
+
+    get productionYear() {
+        return this.#productionYear;
     }
 
     set contentType(_newValue) {
@@ -87,90 +104,128 @@ class Record {
 
     _getJsonObject() {
         return {
-            title: this.#title,
-            originalTitle: this.#originalTitle,
-            productionYear: this.#productionYear,
-            contentType: this.#contentType,
+            id: this.id,
+            title: this.title,
+            originalTitle: this.originalTitle,
+            productionYear: this.productionYear,
+            contentType: this.contentType,
         }
     }
 
     toJson() {
         return this._getJsonObject()
     }
-
-    static fromJson(json) {
-        return (new Record())
-            .setOriginalTitle(json.originalTitle)
-            .setTitle(json.title)
-            .setProductionYear(json.productionYear)
-    }
 }
 
 class Episode extends Record {
-    constructor(...params) {
-        super(params)
-        this._setContentType(Record.CONTENT_TYPES.EPISODE)
+    _getContentType() {
+        return Record.CONTENT_TYPES.EPISODE;
     }
+
+    static fromJson(json) {
+        let instance = new Episode(json)
+        return instance;
+    }
+
 }
 
 class MultiEpisodesContent extends Record {
     /** @type Records */
-    #episodes = new Records()
+    _episodes = new Records()
 
     get episodes() {
-        return this.#episodes
+        return this._episodes
     }
 
-    constructor({ title = undefined, originalTitle = undefined, contentType = undefined, productionYear = undefined }) {
-        super({ title, originalTitle, contentType, productionYear });
-        this._setContentType(Record.CONTENT_TYPES.SEASON)
+    _getContentType() {
+        return Record.CONTENT_TYPES.SEASON;
     }
 
-    _getJsonObject() {
-        return { ...super._getJsonObject() }
+    toJson() {
+        return { ...super.toJson(), episodes: this.episodes.toJson() }
     }
+
+    static fromJson(jsonObject) {
+        jsonObject.episodes = jsonObject.episodes ?? []
+        return jsonObject
+    }
+
 }
 
 class MultiSeasonsContent extends Record {
     /** @type Records */
-    #seasons = new Records()
+    _seasons = new Records()
 
     get seasons() {
-        return this.#seasons
+        return this._seasons
     }
 
-    constructor({ title = undefined, originalTitle = undefined, contentType = undefined, productionYear = undefined }) {
-        super({ title, originalTitle, contentType, productionYear });
-        this._setContentType(Record.CONTENT_TYPES.SERIES)
+    _getContentType() {
+        return Record.CONTENT_TYPES.SERIES;
     }
 
-    _getJsonObject() {
-        return { ...super._getJsonObject(), seasons: [...this.toJson()] }
+    static fromJson(jsonObject) {
+        jsonObject.seasons = jsonObject.seasons ?? [];
+        return jsonObject;
+    }
+
+    toJson() {
+        return { ...super.toJson(), seasons: this.seasons.toJson() }
     }
 }
 
 class Season extends MultiEpisodesContent {
-
+    constructor(config) {
+        super({ ...config })
+    }
+    /**
+     * 
+     * @param  json 
+     * @returns 
+     */
+    static fromJson(json) {
+        json = super.fromJson(json);
+        let instance = new Season(json)
+        instance._episodes = new Records(json.episodes.map(_jsonEpisode => Episode.fromJson(_jsonEpisode)))
+        return instance;
+    }
 }
 
 class Movie extends MultiEpisodesContent {
-
+    /**
+     * 
+     * @param  json 
+     * @returns 
+     */
+    static fromJson(json) {
+        json = super.fromJson(json);
+        let instance = new Movie(json)
+        instance._episodes = new Records(json.episodes.map(_jsonEpisode => Episode.fromJson(_jsonEpisode)))
+        return instance;
+    }
 }
 
 class Series extends MultiSeasonsContent {
-    constructor({ title = undefined, originalTitle = undefined, contentType = undefined, productionYear = undefined }) {
-        super({ title, originalTitle, contentType, productionYear });
-    }
     static fromJson(json) {
-        return (new Series())
-            .setOriginalTitle(json.originalTitle)
-            .setTitle(json.title)
-            .setProductionYear(json.productionYear)
-            .addSeasons(json.seasons)
+        json = super.fromJson(json);
+        let instance = new Series(json)
+        instance._seasons = new Records(json.seasons.map(_jsonSeason => Season.fromJson(_jsonSeason)))
+        return instance;
     }
 }
 
 class TvShow extends MultiSeasonsContent {
+
+    _getContentType() {
+        return Record.CONTENT_TYPES.TVSHOW;
+    }
+
+    static fromJson(json) {
+        json = super.fromJson(json);
+        let instance = new TvShow(json)
+        instance._seasons = new Records(json.seasons.map(_jsonSeason => Season.fromJson(_jsonSeason)))
+        return instance;
+    }
 }
 
 class Records {
@@ -198,24 +253,29 @@ class Records {
      * @param {number} id 
      */
     get(id) {
-        let [item] = this.#items.filter(item => item.id === id)
+        let [item] = this.#items.filter(item => item.id == id)
         return item;
     }
 
     /**
      * 
-     * @param {*} param0 
+     * @param {*} filters 
      * @returns {[Record]}
      */
-    find({ title = undefined, originalTitle = undefined, productionYear = undefined }) {
+    find({ title = undefined, originalTitle = undefined, productionYear = undefined, contentType = undefined }) {
         return this.#items.filter(item => {
             return (
-                (title !== undefined && item.title === title) ||
-                (originalTitle !== undefined && item.originalTitle === originalTitle) ||
-                (productionYear !== undefined && item.productionYear === productionYear) ||
-                false
+                (contentType !== undefined && contentType === Record.CONTENT_TYPES.ALL)
+                ||
+                (
+                    (title !== undefined && item.title === title) ||
+                    (originalTitle !== undefined && item.originalTitle === originalTitle) ||
+                    (productionYear !== undefined && item.productionYear === productionYear) ||
+                    (contentType !== undefined && item.contentType === contentType) ||
+                    false
+                )
             )
-        })
+        });
     }
 
     /**
@@ -241,13 +301,11 @@ class Records {
      * @return {Records}
      * @param {Record|number} recordOrId 
     */
-    remove(recordOrId) {
+    delete(recordOrId) {
         let id = recordOrId instanceof Record ? recordOrId.id : recordOrId;
-        this.#items = this.#items.filter(item => item.id !== id)
+        this.#items = this.#items.filter(item => item.id != id)
         return this
     }
-
-    find() { }
 
     /**
      * 
@@ -279,31 +337,17 @@ class Records {
         return this.#items.map(item => item.toJson())
     }
 
+    /**
+     * 
+     * @param {[Record]} jsonArray 
+     */
+    static fromJson(jsonArray) {
+        return jsonArray.map(jsonItem => Record.fromJson(jsonItem))
+    }
+
 
 
 }
 
 
-
-// let e = new Episode()
-
-// e
-//     .setTitle("01 Pilot")
-//     .setProductionYear(2018)
-//     ;
-// let ssn = new Season()
-
-// ssn
-//     .setTitle("01 Prima stagione")
-//     .addEpisode(e)
-//     ;
-
-// let s = new Series();
-// s
-//     .setTitle("Breaking Bad")
-//     .setProductionYear(2018)
-//     .addSeason(ssn)
-
-// console.log(s.toJson());
-
-module.exports = { Record, Episode, Season, Movie, Series, TvShow, MultiEpisodesContent, MultiSeasonsContent }
+module.exports = { Record, Records, Episode, Season, Movie, Series, TvShow, MultiEpisodesContent, MultiSeasonsContent }
