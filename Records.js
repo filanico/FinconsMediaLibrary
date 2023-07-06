@@ -1,6 +1,5 @@
 const { Record } = require("./Record")
 
-Record
 class Records {
     /** @type {[Record]} */
     #items = null
