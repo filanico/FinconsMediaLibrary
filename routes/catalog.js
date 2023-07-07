@@ -1,3 +1,4 @@
+const { AbstractRepository } = require("../Repositories")
 
 module.exports = function (app) {
     app.group("/episodes", (router) => {

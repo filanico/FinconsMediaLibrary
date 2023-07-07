@@ -29,6 +29,26 @@ class Records {
         return item;
     }
 
+    first() {
+        return this.#items.length > 0 ? this.#items[0] : null
+    }
+
+    indexOf(record) {
+        let ids = this.#items.map(_record => _record.id)
+        return ids.indexOf(record.id);
+    }
+
+    updateAt(index, _updatedItem) {
+        try {
+            let currentItem = this.get(_updatedItem.id)
+            let updatedItem = currentItem.constructor.fromJson(_updatedItem);
+            this.#items[index] = currentItem.constructor.fromJson({ ...currentItem.toJson(), ...updatedItem.toJson() })
+            return this.#items[index]
+        } catch (error) {
+
+        }
+    }
+
     /**
      * 
      * @param {*} filters 
@@ -53,10 +73,14 @@ class Records {
     /**
      * 
      * @return {Records}
-     * @param {Record} record 
+     * @param {[Record]} record 
      */
     add(record) {
-        this.#items.push(record)
+        return this.addMany([record])
+    }
+
+    addMany(recordArray) {
+        recordArray.forEach(record => this.#items.push(record))
         return this
     }
 
@@ -75,8 +99,9 @@ class Records {
     */
     delete(recordOrId) {
         let id = recordOrId instanceof Record ? recordOrId.id : recordOrId;
+        let oldLen = this.#items.length
         this.#items = this.#items.filter(item => item.id != id)
-        return this
+        return oldLen > this.#items.length
     }
 
     /**
@@ -113,7 +138,11 @@ class Records {
      * 
      * @param {[Record]} jsonArray 
      */
-    static fromJson(jsonArray) {
+    static fromJson(jsonObject) {
+        return this.fromJsonArray([jsonObject])
+    }
+
+    static fromJsonArray(jsonArray) {
         return jsonArray.map(jsonItem => Record.fromJson(jsonItem))
     }
 

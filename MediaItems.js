@@ -1,8 +1,22 @@
+const { json } = require("express");
 const { Record } = require("./Record");
 const { Records } = require("./Records");
 
 
 class Episode extends Record {
+    static DEFAULT_CONTENT_TYPE = Record.CONTENT_TYPES.EPISODE
+
+    /** @type  {MultiEpisodesContent} */
+    _parent = null;
+
+    get parent() {
+        return this._parent
+    }
+
+    set parent(_newParent) {
+        this._parent = _newParent;
+    }
+
     _getContentType() {
         return Record.CONTENT_TYPES.EPISODE;
     }
@@ -11,12 +25,22 @@ class Episode extends Record {
         let instance = new Episode(json)
         return instance;
     }
-
 }
 
 class MultiEpisodesContent extends Record {
+    /** @type  {MultiSeasonsContent} */
+    _parent = null;
+
     /** @type Records */
     _episodes = new Records()
+
+    get parent() {
+        return this._parent
+    }
+
+    set parent(_newParent) {
+        this._parent = _newParent;
+    }
 
     get episodes() {
         return this._episodes
@@ -34,7 +58,6 @@ class MultiEpisodesContent extends Record {
         jsonObject.episodes = jsonObject.episodes ?? []
         return jsonObject
     }
-
 }
 
 class MultiSeasonsContent extends Record {
@@ -42,16 +65,25 @@ class MultiSeasonsContent extends Record {
     _seasons = new Records()
 
     get seasons() {
-        return this._seasons
+        return this._seasons ?? []
     }
 
     _getContentType() {
         return Record.CONTENT_TYPES.SERIES;
     }
 
-    static fromJson(jsonObject) {
-        jsonObject.seasons = jsonObject.seasons ?? [];
-        return jsonObject;
+    static fromJson(json) {
+        let [item] = this.fromJsonArray([json]);
+        return item;
+    }
+
+    static fromJsonArray(jsonArray) {
+        return jsonArray.map(_jsonObject => { _jsonObject.seasons = _jsonObject.seasons ?? []; return _jsonObject; })
+    }
+
+    update(record) {
+        super.update(record)
+
     }
 
     toJson() {
@@ -60,6 +92,7 @@ class MultiSeasonsContent extends Record {
 }
 
 class Season extends MultiEpisodesContent {
+
     constructor(config) {
         super({ ...config })
     }
@@ -116,3 +149,4 @@ class TvShow extends MultiSeasonsContent {
 
 
 module.exports = { Episode, Season, Movie, Series, TvShow, MultiEpisodesContent, MultiSeasonsContent }
+

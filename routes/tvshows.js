@@ -1,15 +1,36 @@
+const { TvShowsRepository } = require("../repositories/TvShowsRepository")
+
 module.exports = function (app) {
-    app.group("/tvshows", (router) => {
-        router.get("/all", (req, res) => {
+    let tvShows = new TvShowsRepository()
+
+    app.group("/tv-shows", (router) => {
+        router.get("/", (req, res) => {
             return res.json(
                 tvShows.all().map(x => x.toJson())
             )
         })
-        router.post("/create/", (req, res) => {
-            console.log(req.params.parentId);
+
+        router.post("/", (req, res) => {
             let jsonObject = req.body;
-            tvShows.create(jsonObject);
-            res.json(1)
+            if (!Array.isArray(jsonObject)) {
+                jsonObject = [jsonObject]
+            }
+            let newItems = tvShows.createMany(jsonObject);
+            res.json(newItems.toJson())
+        })
+
+        router.put("/", (req, res) => {
+            let updatedItems = req.body
+            if (!Array.isArray(updatedItems)) {
+                updatedItems = [updatedItems]
+            }
+            let updatedSeries = tvShows.updateMany(updatedItems);
+            res.json(updatedSeries)
+        })
+
+        router.delete("/:id", (req, res) => {
+            let isDeleted = tvShows.delete(req.params.id);
+            res.json(isDeleted)
         })
 
     })

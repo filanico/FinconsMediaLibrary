@@ -4,7 +4,16 @@
   "description": "[Implementare] un’applicazione NodeJS che disponga di Restful API per gestire la CRUD (create, read, update, delete) dei seguenti metadati di un catalogo di contenuti video: \\*\\* title : string content-type: [SERIES, SEASON, EPISODE, MOVIE, TV SHOW] original-title: string production-year: int con interfaccia di tipo Rest Service che soddisfi i seguenti requisiti :",
   "main": "StorageService.js",
   "scripts": {
-    "test": "jest"
+    "runServer": "node Server.js start &",
+    "stopServer": "npm run testKillAll",
+    "test": "jest --bail",
+    "testIntegration": "jest --detectOpenHandles && node Server.js stop",
+    "testKillAll": "ps aux | grep node | grep Server | awk '{print $2}' | xargs kill -9"
+  },
+  "jest": {
+    "testMatch": [
+      "**/tests/**/*.js"
+    ]
   },
   "keywords": [],
   "author": "",
@@ -13,7 +22,8 @@
     "axios": "^1.4.0",
     "express": "^4.18.2",
     "express-group-routes": "^1.1.0",
-    "fs": "^0.0.1-security"
+    "fs": "^0.0.1-security",
+    "supertest": "^6.3.3"
   },
   "devDependencies": {
     "jest": "^29.6.1"

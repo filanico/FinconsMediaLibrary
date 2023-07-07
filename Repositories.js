@@ -1,5 +1,4 @@
-const fs = require('fs');
-const { Series, MultiSeasonsContent, Season, TvShow, Movie, Episode, MultiEpisodesContent } = require('./MediaItems');
+const { Episode, MultiEpisodesContent } = require('./MediaItems');
 const { Record } = require('./Record');
 const { Records } = require('./Records');
 
@@ -8,6 +7,7 @@ class AbstractRepository {
     /** @type {Records} */
     static _data = null
 
+    /** @type {Record} */
     itemClass = null
 
     constructor(itemClass) {
@@ -15,29 +15,26 @@ class AbstractRepository {
         AbstractRepository._data = new Records()
     }
 
-    // /**
-    //  * @param {*} jsonObject 
-    //  * @returns {Record}
-    //  */
-    // create(jsonObject) {
-    //     return Record.fromJson(jsonObject);
-    // }
-
     all() {
-        return AbstractRepository._data.find({ contentType: Record.CONTENT_TYPES.ALL })
+        return AbstractRepository._data.find({ contentType: this.itemClass.DEFAULT_CONTENT_TYPE })
+    }
+
+    static empty(obj) {
+        return obj === null || obj === undefined
     }
 
     /**
      * 
-     * @param {Record} id 
+     * @param {Record|number} id 
      * @returns 
      */
-    get(id) {
+    get(recordOrId) {
+        let id = recordOrId instanceof Record ? recordOrId.id : recordOrId;
         return AbstractRepository._data.get(id)
     }
 
     delete(id) {
-        AbstractRepository._data = AbstractRepository._data.filter(_item => _item.id !== id)
+        return AbstractRepository._data.delete(id)
     }
     /**
      * 
@@ -45,9 +42,25 @@ class AbstractRepository {
      * @param {*} jsonObject 
      * @returns {Record}
      */
-    update(id, jsonObject) {
-        let item = this.get(id);
-        return item;
+    update(jsonObject) {
+        return updateMany([jsonObject])
+    }
+
+    updateMany(jsonArray) {
+        let updatedtems = []
+        jsonArray.forEach(jsonObject => {
+            updatedtems.push(
+                AbstractRepository._data.updateAt(
+                    this.indexOf(jsonObject),
+                    jsonObject
+                )
+            );
+        });
+        return updatedtems;
+    }
+
+    indexOf(record) {
+        return AbstractRepository._data.indexOf(record)
     }
     /**
      * 
@@ -70,126 +83,18 @@ class AbstractRepository {
      * @param {MultiEpisodesContent} parent 
      * @returns {Episode}
      */
-    create(jsonObject, parent = undefined) {
-        let mediaItem = this.itemClass.fromJson(jsonObject);
-        if (parent !== undefined) {
-            parent.episodes.add(episode)
-        }
-        AbstractRepository._data.add(mediaItem);
-        return mediaItem;
+    create(jsonObject) {
+        return this.createMany([jsonObject]).first()
+    }
+
+    createMany(jsonArray) {
+        return new Records(jsonArray.map(jsonObject => {
+            let mediaItem = this.itemClass.fromJson(jsonObject);
+            AbstractRepository._data.add(mediaItem);
+            return mediaItem;
+        }))
+
     }
 }
 
-class EpisodesRepository extends AbstractRepository {
-    constructor(){
-        super(Episode);
-    }
-    // /**
-    //  * @param {*} jsonObject 
-    //  * @param {MultiEpisodesContent} parent 
-    //  * @returns {Episode}
-    //  */
-    // create(jsonObject, parent = undefined) {
-    //     let episode = Episode.fromJson(jsonObject);
-    //     if (parent !== undefined) {
-    //         parent.episodes.add(episode)
-    //     }
-    //     AbstractRepository._data.add(episode);
-    //     return episode;
-    // }
-
-    all() {
-        return AbstractRepository._data.find({ contentType: Record.CONTENT_TYPES.EPISODE })
-    }
-}
-
-class MoviesRepository extends AbstractRepository {
-    /**
-     * @param {*} jsonObject 
-     * @param {MultiEpisodesContent} parent 
-     * @returns {Movie}
-     */
-    create(jsonObject, parent = undefined) {
-        let movie = Movie.fromJson(jsonObject);
-        if (parent !== undefined) {
-            parent.movies.add(movie)
-        }
-        AbstractRepository._data.add(movie);
-        return movie;
-    }
-
-    all() {
-        return AbstractRepository._data.find({ contentType: Record.CONTENT_TYPES.MOVIE })
-    }
-}
-
-class TvShowsRepository extends AbstractRepository {
-    /**
-     * @param {*} jsonObject 
-     * @param {MultiEpisodesContent} parent 
-     * @returns {TvShow}
-     */
-    create(jsonObject, parent = undefined) {
-        let tvShow = TvShow.fromJson(jsonObject);
-        if (parent !== undefined) {
-            parent.tvShows.add(tvShow)
-        }
-        AbstractRepository._data.add(tvShow);
-        return tvShow;
-    }
-
-    all() {
-        return AbstractRepository._data.find({ contentType: Record.CONTENT_TYPES.TVSHOW })
-    }
-}
-
-class SeriesRepository extends AbstractRepository {
-    /**
-     * @param {*} jsonObject 
-     * @param {MultiEpisodesContent} parent 
-     * @returns {Series}
-     */
-    create(jsonObject, parent = undefined) {
-        let series = Series.fromJson(jsonObject);
-        if (parent !== undefined) {
-            parent.serieses.add(series)
-        }
-        AbstractRepository._data.add(series);
-        return series;
-    }
-
-    /**
-     * 
-     * @param {string|number} id 
-     * @returns {Series} 
-     */
-    get(id) {
-        return super.get(id);
-    }
-
-    all() {
-        return AbstractRepository._data.find({ contentType: Record.CONTENT_TYPES.SERIES })
-    }
-}
-
-class SeasonsRepository extends AbstractRepository {
-    /**
-     * @param {*} jsonObject 
-     * @param {MultiEpisodesContent} parent 
-     * @returns {Season}
-     */
-    create(jsonObject, parent = undefined) {
-        let season = Season.fromJson(jsonObject);
-        if (parent !== undefined) {
-            parent.seasons.add(season)
-        }
-        AbstractRepository._data.add(season);
-        return season;
-    }
-
-    all() {
-        return AbstractRepository._data.find({ contentType: Record.CONTENT_TYPES.SEASON })
-    }
-}
-
-module.exports = { MoviesRepository, EpisodesRepository, TvShowsRepository, SeriesRepository, SeasonsRepository, AbstractRepository }
+module.exports = { AbstractRepository }

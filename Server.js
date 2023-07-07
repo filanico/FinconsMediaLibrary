@@ -1,16 +1,27 @@
 require('express-group-routes');
 const express = require('express');
-const axios = require('axios')
 const app = express();
-const { EpisodesRepository, MoviesRepository, SeasonsRepository, SeriesRepository, TvShowsRepository, AbstractRepository } = require('./Repositories');
 const { StorageService } = require('./StorageService');
-const { Season } = require('./MediaItems');
-const tvshows = require('./routes/tvshows');
+const { configurations } = require('./Configurations');
+const { EpisodesRepository } = require('./repositories/EpisodesRepository');
+const { AbstractRepository } = require('./Repositories');
+const { SeasonsRepository } = require('./repositories/SeasonsRepository');
+const { SeriesRepository } = require('./repositories/SeriesRepository');
+const { MoviesRepository } = require('./repositories/MoviesRepository');
+const { TvShowsRepository } = require('./repositories/TvShowsRepository');
+const { default: axios } = require('axios');
 
-const port = 3002;
+app.use(express.json())
+
+require('./routes/series')(app)
+require('./routes/episodes')(app)
+require('./routes/movies')(app)
+require('./routes/seasons')(app)
+require('./routes/tvshows')(app)
+
+
+const port = configurations.serverPort;
 const DEFAULT_DB_FILEPATH = 'repository.json';
-
-
 let storageService = new StorageService(DEFAULT_DB_FILEPATH);
 
 /** @type {AbstractRepository} */
@@ -26,30 +37,72 @@ let movies = null;
 /** @type {TvShowsRepository} */
 let tvShows = null;
 
+let action = process.argv[2] ?? null;
+let serverInstance = null;
 
-app.use(express.json())
+function post(uri, data) {
+    axios.post("http://localhost:3002" + uri, data,
+        {
+            headers: {
+                'Content-type': 'application/json'
+            },
+        }
+    )
+}
 
-app.listen(port, () => {
-    catalog = new AbstractRepository();
-    episodes = new EpisodesRepository();
-    // seasons = new SeasonsRepository();
-    series = new SeriesRepository();
-    movies = new MoviesRepository()
-    tvShows = new TvShowsRepository()
+function put(uri, data) {
+    axios.put("http://localhost:3002" + uri, data,
+        {
+            headers: {
+                'Content-type': 'application/json'
+            },
+        }
+    )
+}
 
-    require('./routes/series')(app, series)
-    require('./routes/tvshows')(app, tvshows)
-    require('./routes/movies')(app, movies)
+function startServer(onDone = () => { }) {
 
-    // axios.post("http://localhost:" + port + "/series", { title: "Breaking bad", productionYear: 2010 })
-    // axios.post("http://localhost:" + port + "/movies/create", { title: "Il Padrino", productionYear: 2010 })
-    // axios.post("http://localhost:" + port + "/series/3/seasons", { title: "01 Breaking Bad created by http call" })
-    // axios.post("http://localhost:" + port + "/series/3/seasons/2")
-    // axios.delete("http://localhost:" + port + "/series/3/seasons/2")
+    serverInstance = app.listen(port, () => {
+        catalog = new AbstractRepository();
+        episodes = new EpisodesRepository();
+        series = new SeriesRepository();
+        movies = new MoviesRepository()
+        tvShows = new TvShowsRepository()
 
+        seasons = new SeasonsRepository()
+        episodes = new EpisodesRepository()
 
-    // axios.post("http://localhost:" + port + "/tv-shows/create", { title: "The late show", productionYear: 2010 })
+        // post("/series", [
+        //     { "title": "Fake title #1" },
+        //     { "title": "Fake title #2" },
+        //     { "title": "Fake title #3" }
+        // ])
+        // post("/episodes", [
+        //     { "title": "Episode Fake title #1" },
+        //     { "title": "Episode Fake title #2" },
+        //     { "title": "Episode Fake title #3" }
+        // ])
+        // put("/series", [
+        //     { "id": 1, "title": "updated title" },
+        //     { "id": 100, "title": "updated title for ne item" }
+        // ])
 
+        onDone()
+    });
 
-    console.log("MediaServer listening on port " + port);
-})
+}
+
+function stopServer(onDone) {
+    serverInstance.close(onDone);
+}
+
+switch (action) {
+    case 'start':
+        startServer();
+        break;
+    case 'stop':
+        stopServer();
+        break;
+}
+
+module.exports = { startServer, app, stopServer }

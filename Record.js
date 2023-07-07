@@ -8,6 +8,8 @@ class Record {
         'TVSHOW': 'TVSHOW'
     };
     static ID = 1;
+    static DEFAULT_CONTENT_TYPE = Record.CONTENT_TYPES.ALL
+
     #id = -1
     #title = undefined
     #originalTitle = undefined
@@ -31,10 +33,9 @@ class Record {
      * @param {Record} record 
      */
     update(record) {
-        for (key in record) {
-            console.log(key);
-            process.exit();
-        }
+        this.setTitle(record.title ?? undefined);
+        this.setProductionYear(record.productionYear ?? undefined)
+        this.setOriginalTitle(record.originalTitle ?? undefined)
     }
 
     static _isLegalContentType(_contentType) {
@@ -109,6 +110,7 @@ class Record {
             originalTitle: this.originalTitle,
             productionYear: this.productionYear,
             contentType: this.contentType,
+            parent: this.parent ?? null,
         }
     }
 
