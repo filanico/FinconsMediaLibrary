@@ -28,9 +28,10 @@ let tvShows = null;
 
 
 app.use(express.json())
+
 app.listen(port, () => {
     catalog = new AbstractRepository();
-    // episodes = new EpisodesRepository();
+    episodes = new EpisodesRepository();
     // seasons = new SeasonsRepository();
     series = new SeriesRepository();
     movies = new MoviesRepository()
@@ -40,9 +41,9 @@ app.listen(port, () => {
     require('./routes/tvshows')(app, tvshows)
     require('./routes/movies')(app, movies)
 
-    axios.post("http://localhost:" + port + "/series", { title: "Breaking bad", productionYear: 2010 })
+    // axios.post("http://localhost:" + port + "/series", { title: "Breaking bad", productionYear: 2010 })
     // axios.post("http://localhost:" + port + "/movies/create", { title: "Il Padrino", productionYear: 2010 })
-    axios.post("http://localhost:" + port + "/series/3/seasons", { title: "01 Breaking Bad created by http call" })
+    // axios.post("http://localhost:" + port + "/series/3/seasons", { title: "01 Breaking Bad created by http call" })
     // axios.post("http://localhost:" + port + "/series/3/seasons/2")
     // axios.delete("http://localhost:" + port + "/series/3/seasons/2")
 

@@ -2,22 +2,26 @@ const fs = require('fs');
 const { Series, MultiSeasonsContent, Season, TvShow, Movie, Episode, MultiEpisodesContent } = require('./MediaItems');
 const { Record } = require('./Record');
 const { Records } = require('./Records');
+
 class AbstractRepository {
 
     /** @type {Records} */
     static _data = null
 
-    constructor() {
+    itemClass = null
+
+    constructor(itemClass) {
+        this.itemClass = itemClass
         AbstractRepository._data = new Records()
     }
 
-    /**
-     * @param {*} jsonObject 
-     * @returns {Record}
-     */
-    create(jsonObject) {
-        return Record.fromJson(jsonObject);
-    }
+    // /**
+    //  * @param {*} jsonObject 
+    //  * @returns {Record}
+    //  */
+    // create(jsonObject) {
+    //     return Record.fromJson(jsonObject);
+    // }
 
     all() {
         return AbstractRepository._data.find({ contentType: Record.CONTENT_TYPES.ALL })
@@ -60,22 +64,39 @@ class AbstractRepository {
     toJson() {
         return AbstractRepository._data.toJson()
     }
-}
 
-class EpisodesRepository extends AbstractRepository {
     /**
      * @param {*} jsonObject 
      * @param {MultiEpisodesContent} parent 
      * @returns {Episode}
      */
     create(jsonObject, parent = undefined) {
-        let episode = Episode.fromJson(jsonObject);
+        let mediaItem = this.itemClass.fromJson(jsonObject);
         if (parent !== undefined) {
             parent.episodes.add(episode)
         }
-        AbstractRepository._data.add(episode);
-        return episode;
+        AbstractRepository._data.add(mediaItem);
+        return mediaItem;
     }
+}
+
+class EpisodesRepository extends AbstractRepository {
+    constructor(){
+        super(Episode);
+    }
+    // /**
+    //  * @param {*} jsonObject 
+    //  * @param {MultiEpisodesContent} parent 
+    //  * @returns {Episode}
+    //  */
+    // create(jsonObject, parent = undefined) {
+    //     let episode = Episode.fromJson(jsonObject);
+    //     if (parent !== undefined) {
+    //         parent.episodes.add(episode)
+    //     }
+    //     AbstractRepository._data.add(episode);
+    //     return episode;
+    // }
 
     all() {
         return AbstractRepository._data.find({ contentType: Record.CONTENT_TYPES.EPISODE })

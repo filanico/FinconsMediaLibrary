@@ -1,10 +1,9 @@
-module.exports = function (app) {
+const { Episode } = require('./MediaItems');
+const { EpisodesRepository } = require('./Repositories');
 
-    app.get('/login', function (req, res) {
-        res.render('login', {
-            title: 'Express Login'
-        });
-    });
-
-    //other routes..
-}
+test('Repository manages class reference', () => {
+    let episodes = new EpisodesRepository();
+    let episode = episodes.create({title:"Episode title"})
+    expect( episode instanceof Episode )
+  expect(1+2).toBe(3);
+});
