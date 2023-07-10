@@ -2,6 +2,7 @@ require('express-group-routes')
 const express = require('express');
 const { print_routes_list } = require('./utils/server_routes');
 const { handlers, emptyHandler } = require('./routes_handlers');
+const { Database } = require('./Database');
 
 const app = express();
 let mediaTypes = ["series", "movies", "seasons", "episodes", "tv-shows"]
@@ -21,7 +22,9 @@ mediaTypes.forEach(mediaType => {
 if (process.argv.length === 3) {
     switch (process.argv[2]) {
         case 'start':
-            app.listen(3000, () => { });
+            app.listen(3000, () => {
+                Database.Get();
+            });
             break;
         case 'routes':
             print_routes_list(app)
