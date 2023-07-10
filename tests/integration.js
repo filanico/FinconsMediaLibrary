@@ -1,14 +1,13 @@
 
 const request = require('supertest');
-const { it } = require('jest');
+require('jest');
 const { mediaTypes, app } = require('../Server');
-
 
 describe("When hitting GET / of ", () => {
     mediaTypes.forEach((mediaType) => {
-        it(mediaType + " returns 200", () => {
-            request(app)
-                .get("/")
+        test(mediaType + " returns 200", async () => {
+            await request(app)
+                .get("/" + mediaType)
                 .expect(200)
         })
     })
