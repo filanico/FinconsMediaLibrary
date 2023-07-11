@@ -43,13 +43,6 @@ async function processMessage(params) {
 process.on("message", async (message) => {
     let { action, mediaType, payload = {}, urlParams = [] } = message;
     let mediaTypeClass = TYPES_CLASS[mediaType]
-    switch (action) {
-        case 'init':
-            db = Database.Get();
-            break;
-        default:
-            await processMessage({ action, mediaTypeClass, payload, urlParams })
-            break;
-    }
+    await processMessage({ action, mediaTypeClass, payload, urlParams })
     console.log("[Database] " + (action));
 })
