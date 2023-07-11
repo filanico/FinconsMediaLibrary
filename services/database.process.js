@@ -41,7 +41,7 @@ async function processMessage(params) {
 }
 
 process.on("message", async (message) => {
-    let { action, mediaType, payload = {}, urlParams = {} } = message;
+    let { action, mediaType, payload = {}, urlParams = [] } = message;
     let mediaTypeClass = TYPES_CLASS[mediaType]
     switch (action) {
         case 'init':
