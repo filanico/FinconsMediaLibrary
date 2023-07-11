@@ -2,7 +2,9 @@ const { Database } = require("./Database");
 const { Series, TvShow, Season, Episode, Movie, MultiSeasonMedia, Media } = require("./Media");
 const { CLASS_TYPES } = require("./utils/maps");
 const { Worker } = require('worker_threads')
+// const { processDatabase } = require("./Server");
 
+let processDatabase = null;
 let emptyHandler = {
     'post': (req, res) => {
         res.status(404).send("Not yet implemented");
@@ -20,89 +22,65 @@ let emptyHandler = {
 
 }
 
-function post(mediaTypeClass) {
-    return (req, res) => {
-        let json = req.body;
-        let newMedia = mediaTypeClass.fromJson(json);
-        let db = Database.Get()
-        db.getLock().then(release => {
-            release()
-            res
-                .status(200)
-                .send(db.add(newMedia))
-        })
-    }
-}
 
-
-function batchPost(mediaTypeClass) {
-    return (req, res) => {
-        let db = Database.Get();
-        db.getLock().then(release => {
-            let worker = new Worker('./workers/batchPost', {
-                workerData: {
-                    jsonDatabase: db.serialize(),
-                    jsonRequest: req.body,
-                    iMediaCounter: Media.ID,
-                    sMediaType: CLASS_TYPES[mediaTypeClass]
-                }
-            });
-            worker.on('message', (result) => {
-                db.fromJson(result.jsonDatabase)
-                Media.setID(result.iMediaCounter)
-                res.send(result.mediaItems);
-                release()
-            });
-            worker.postMessage([])
-        })
-    }
-}
-
-
-function get(mediaTypeClass) {
-    return (req, res) => {
-        let db = Database.Get()
-        db.getLock().then(release => {
-            release()
-            let found = db.find(req.params.id);
-            if (found) {
-                res
-                    .status(200)
-                    .send(found.toJson())
-            } else {
-                res.sendStatus(404)
+async function db(params) {
+    let promise = new Promise((ok) => {
+        processDatabase.send(params)
+        processDatabase.on("message", ({ replyTo, payload, status }) => {
+            if (replyTo === params.action) {
+                ok(payload)
             }
         })
+    });
+
+    return await promise
+}
+
+function dbSendRequest({ mediaTypeClass, action }) {
+    return async (req, res) => {
+        let jsonResponse = await db({
+            mediaType: CLASS_TYPES[mediaTypeClass],
+            payload: req.body,
+            urlParams: req.params,
+            action
+        });
+        switch (req.method) {
+            case 'GET':
+                if (jsonResponse === undefined) {
+                    res.sendStatus(404);
+                }
+            default:
+                res.json(jsonResponse)
+                break;
+        }
     }
 }
-function put(mediaTypeClass) {
-    return (req, res) => {
-        let json = req.body;
-        json.id = req.params.id
-        let db = Database.Get()
-        let mediaFromJson = mediaTypeClass.fromJson(json);
-        let isUpdated = db.update(mediaFromJson.id, mediaFromJson);
-        if (isUpdated === null) {
-            res.sendStatus(404);
-            return;
-        }
-        db.getLock().then(release => {
-            release()
-            res
-                .status(200)
-                .send(db.find(req.params.id).toJson())
-        })
-    }
+
+function post(mediaTypeClass) {
+    return dbSendRequest({ mediaTypeClass, action: 'post' })
+}
+function batchPost(mediaTypeClass) {
+    return dbSendRequest({ mediaTypeClass, action: 'batchPost' })
+}
+function batchUpdate(mediaTypeClass) {
+    return dbSendRequest({ mediaTypeClass, action: 'batchUpdate' })
+}
+function batchDelete(mediaTypeClass) {
+    return dbSendRequest({ mediaTypeClass, action: 'batchDelete' })
+}
+function get(mediaTypeClass) {
+    return dbSendRequest({ mediaTypeClass, action: 'get' })
+}
+function update(mediaTypeClass) {
+    return dbSendRequest({ mediaTypeClass, action: 'update' })
+}
+function remove(mediaTypeClass) {
+    return dbSendRequest({ mediaTypeClass, action: 'delete' })
 }
 function getAll(mediaTypeClass) {
-    return (req, res) => {
-        let db = Database.Get()
-        db.getLock().then(release => {
-            res.send(db.findAllOf(mediaTypeClass).map(media => media.toJson()))
-            release()
-        });
-    };
+    return dbSendRequest({ mediaTypeClass, action: 'getAll' })
 }
+
 
 function appendSeasons() {
     return (req, res) => {
@@ -189,53 +167,134 @@ function updateEpisodes() {
 let handlers = {
     'series': {
         ...emptyHandler,
+        'delete': remove(Series),
         'getAll': getAll(Series),
         'get': get(Series),
         'post': post(Series),
-        'put': put(Series),
-        'batchPost': batchPost(Series),
+        'put': update(Series),
         'appendSeasons': appendSeasons(),
         'detachSeasons': detachSeasons(),
         'updateSeasons': updateSeasons(),
+        'batchPost': batchPost(Series),
+        'batchUpdate': batchUpdate(Series),
+        'batchDelete': batchDelete(Series),
 
     },
     'episodes': {
         ...emptyHandler,
+        'delete': remove(Episode),
         'getAll': getAll(Episode),
         'get': get(Episode),
         'post': post(Episode),
-        'put': put(Episode),
+        'put': update(Episode),
+        'batchPost': batchPost(Episode),
+        'batchUpdate': batchUpdate(Episode),
+        'batchDelete': batchDelete(Episode),
+
     },
     'seasons': {
         ...emptyHandler,
+        'delete': remove(Season),
         'getAll': getAll(Season),
         'get': get(Season),
         'post': post(Season),
-        'put': put(Season),
+        'put': update(Season),
         'appendEpisodes': appendEpisodes(),
         'detachEpisodes': detachEpisodes(),
         'updateEpisodes': updateEpisodes(),
+        'batchPost': batchPost(Season),
+        'batchUpdate': batchUpdate(Season),
+        'batchDelete': batchDelete(Season),
     },
     'tv-shows': {
         ...emptyHandler,
+        'delete': remove(TvShow),
         'getAll': getAll(TvShow),
         'get': get(TvShow),
         'post': post(TvShow),
-        'put': put(TvShow),
+        'put': update(TvShow),
         'appendSeasons': appendSeasons(),
         'detachSeasons': detachSeasons(),
         'updateSeasons': updateSeasons(),
+        'batchPost': batchPost(TvShow),
+        'batchUpdate': batchUpdate(TvShow),
+        'batchDelete': batchDelete(TvShow),
     },
     'movies': {
         ...emptyHandler,
+        'delete': remove(Movie),
         'getAll': getAll(Movie),
         'get': get(Movie),
         'post': post(Movie),
-        'put': put(Movie),
+        'put': update(Movie),
         'appendEpisodes': appendEpisodes(),
         'detachEpisodes': detachEpisodes(),
         'updateEpisodes': updateEpisodes(),
+        'batchPost': batchPost(Movie),
+        'batchUpdate': batchUpdate(Movie),
+        'batchDelete': batchDelete(Movie),
     },
 }
 
-module.exports = { handlers, emptyHandler }
+
+let mediaTypes = ["series", "movies", "seasons", "episodes", "tv-shows"]
+let additionalRoutes = {
+    "series": [
+        (router) => {
+            let mediaTypeHandler = handlers["series"] ?? emptyHandler
+            router.post("/:id/seasons", mediaTypeHandler['appendSeasons'])
+            router.delete("/:id/seasons", mediaTypeHandler['detachSeasons'])
+            router.patch("/:id/seasons", mediaTypeHandler['updateSeasons'])
+        }
+    ],
+    "tv-shows": [
+        (router) => {
+            let mediaTypeHandler = handlers["tv-shows"] ?? emptyHandler
+            router.post("/:id/seasons", mediaTypeHandler['appendSeasons'])
+            router.delete("/:id/seasons", mediaTypeHandler['detachSeasons'])
+            router.patch("/:id/seasons", mediaTypeHandler['updateSeasons'])
+        }
+    ],
+    "seasons": [
+        (router) => {
+            let mediaTypeHandler = handlers["seasons"] ?? emptyHandler
+            router.post("/:id/episodes", mediaTypeHandler['appendEpisodes'])
+            router.delete("/:id/episodes", mediaTypeHandler['detachEpisodes'])
+            router.patch("/:id/episodes", mediaTypeHandler['updateEpisodes'])
+        }
+    ],
+    "movies": [
+        (router) => {
+            let mediaTypeHandler = handlers["movies"] ?? emptyHandler
+            router.post("/:id/episodes", mediaTypeHandler['appendEpisodes'])
+            router.delete("/:id/episodes", mediaTypeHandler['detachEpisodes'])
+            router.patch("/:id/episodes", mediaTypeHandler['updateEpisodes'])
+        }
+    ]
+}
+
+function build_routes_handlers(app, _processDatabase) {
+    processDatabase = _processDatabase
+    mediaTypes.forEach(mediaType => {
+        let mediaTypeHandler = handlers[mediaType] ?? emptyHandler
+        app.group("/" + mediaType, (router) => {
+            router.post("/", mediaTypeHandler['post'])
+            router.post("/batch", mediaTypeHandler['batchPost'])
+            router.get("/", mediaTypeHandler['getAll'])
+            router.get("/:id", mediaTypeHandler['get'])
+            router.put("/:id", mediaTypeHandler['put'])
+            router.put("/batch", mediaTypeHandler['batchPut'])
+            router.delete("/:id", mediaTypeHandler['delete'])
+            router.delete("/batch", mediaTypeHandler['batchDelete'])
+            if (mediaType in additionalRoutes) {
+                additionalRoutes[mediaType].forEach(routeGenerator => {
+                    routeGenerator(router)
+                })
+            }
+        })
+    })
+}
+
+
+
+module.exports = { build_routes_handlers }

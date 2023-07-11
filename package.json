@@ -4,7 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "jest"
+    "test": "jest",
+    "start": "node server.js start",
+    "routes": "node server.js routes"
   },
   "keywords": [],
   "author": "",
