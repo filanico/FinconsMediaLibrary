@@ -1,7 +1,14 @@
 const { describe, expect, test } = require('@jest/globals')
-const { Movie, Episode, Season, Media, Series } = require('../Media')
+const { Movie, Episode, Season, Media, Series, TvShow } = require('../Media')
 const { Database } = require('../Database')
 
+beforeEach(() => {
+    Media.resetCounter();
+})
+
+afterEach(() => {
+    Media.resetCounter();
+})
 
 describe("Media item", () => {
     test("Converts title to JSON", () => {
@@ -49,14 +56,81 @@ describe("Media item", () => {
         })
     })
     test("Each media has different ID", () => {
-        Media.resetCounter();
         let media = new Episode();
         expect(media.id).toBe(1);
         media = new Season();
         expect(media.id).toBe(2);
         media = new Series();
         expect(media.id).toBe(3);
+    })
 
+    test("Updates Series seasons", () => {
+        let series = new Series({
+            title: "Breaking bad", children: [
+                new Season({ title: "01 Stagione per breaking bad" }),
+                new Season({ title: "02 Stagione per breaking bad", "originalTitle": "series original title" }),
+                new Season({ title: "03 Stagione per breaking bad" }),
+                new Season({ title: "04 Stagione per breaking bad" }),
+            ]
+        })
+        series.updateSeasons([
+            { id: 2, title: "New season title" }
+        ])
+        expect(series.seasons.length).toBe(4)
+        expect(series.seasons[1].title).toBe("New season title")
+        expect(series.seasons[1].originalTitle).toBe("series original title")
+    })
+
+
+    test("Deletes Series seasons", () => {
+        let series = new Series({
+            title: "Breaking bad", children: [
+                new Season({ title: "01 Stagione per breaking bad" }),
+                new Season({ title: "02 Stagione per breaking bad", "originalTitle": "series original title" }),
+                new Season({ title: "03 Stagione per breaking bad" }),
+                new Season({ title: "04 Stagione per breaking bad" }),
+            ]
+        })
+        series.detachSeasons([
+            { id: 2, },
+            { id: 3, }
+        ])
+        expect(series.seasons.length).toBe(2)
+    })
+
+    test("Appends Series seasons", () => {
+        let series = new Series({
+            title: "Breaking bad", children: [
+                new Season({ title: "01 Stagione per breaking bad" }),
+                new Season({ title: "02 Stagione per breaking bad", "originalTitle": "series original title" }),
+                new Season({ title: "03 Stagione per breaking bad" }),
+                new Season({ title: "04 Stagione per breaking bad" }),
+            ]
+        })
+        series.appendSeasons([
+            { title: "04 Stagione per breaking bad" },
+            { title: "05 Stagione per breaking bad" },
+            { title: "06 Stagione per breaking bad" },
+        ])
+        expect(series.seasons.length).toBe(7)
+    })
+
+
+    test("Updates TvShows seasons", () => {
+        let tvShow = new TvShow({
+            title: "The late night show", children: [
+                new Season({ title: "01 Stagione per The late night show" }),
+                new Season({ title: "02 Stagione per The late night show", "originalTitle": "series original title" }),
+                new Season({ title: "03 Stagione per The late night show" }),
+                new Season({ title: "04 Stagione per The late night show" }),
+            ]
+        })
+        tvShow.updateSeasons([
+            { id: 2, title: "New season title" }
+        ])
+        expect(tvShow.seasons.length).toBe(4)
+        expect(tvShow.seasons[1].title).toBe("New season title")
+        expect(tvShow.seasons[1].originalTitle).toBe("series original title")
     })
 })
 

@@ -37,16 +37,11 @@ function post(mediaTypeClass) {
 
 function batchPost(mediaTypeClass) {
     return (req, res) => {
-        let db = Database.Get();
-        db.getLock().then(release => {
-            let worker = new Worker('./workers/batchPost', { workerData: db.serialize() });
-            worker.on('message', (result) => {
-                db.fromJson(result)
-                res.send(result);
-                release()
-            });
-            worker.postMessage([req.body, CLASS_TYPES[mediaTypeClass]]);
-        })
+        let worker = new Worker('./workers/batchPost');
+        worker.on('message', (result) => {
+            res.send(result);
+        });
+        worker.postMessage([req.body, CLASS_TYPES[mediaTypeClass]]);
     }
 }
 

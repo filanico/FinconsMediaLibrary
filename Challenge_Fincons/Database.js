@@ -1,6 +1,6 @@
 const { Media } = require("./Media");
 const { Mutex } = require('async-mutex');
-const { CLASS_TYPES, TYPES_CLASS } = require("./utils/maps");
+const { CLASS_TYPES } = require("./utils/maps");
 class Database {
 
     /** @type {[Media]} */
@@ -30,21 +30,6 @@ class Database {
             Database.counter++;
             this.#lock = new Mutex();
         }
-    }
-    /**
-     * 
-     * @param {SharedArrayBuffer} data 
-     */
-    serialize() {
-        return this._data.map(media => media.toJson())
-    }
-
-    fromJson(jsonArray) {
-        this._data = jsonArray.map(jsonObject => {
-            jsonObject.type = jsonObject.type ?? Media;
-            let className = TYPES_CLASS[jsonObject.type]
-            return className.fromJson(jsonObject)
-        })
     }
 
     /**
