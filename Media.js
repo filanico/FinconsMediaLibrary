@@ -62,8 +62,19 @@ class Media {
         return jsonObject ? new Class(jsonObject) : null
     }
 
-    static resetCounter() {
+    static resetID() {
         Media.#ID = 1;
+    }
+
+    static get ID() {
+        return Media.#ID;
+    }
+    /**
+     * 
+     * @param {number} count 
+     */
+    static setID(count) {
+        Media.#ID = count;
     }
 }
 class MultiSeasonMedia extends Media {

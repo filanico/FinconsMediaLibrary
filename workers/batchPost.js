@@ -1,28 +1,34 @@
 const { parentPort, workerData } = require('worker_threads');
-const { Database } = require('../Database');
-const { Series, TvShow, Season, Episode, Movie, MultiSeasonMedia } = require("../Media");
 const { TYPES_CLASS } = require("../utils/maps");
+const { Database } = require('../Database');
+const { Media } = require('../Media');
 
-parentPort.on('message', ([json, mediaType]) => {
-    const mediaTypeClass = TYPES_CLASS[mediaType]
-    // const mediaTypeClass = Series
-    run(json, mediaTypeClass).then(result => {
-        parentPort.postMessage(result);
-    });
+parentPort.on('message', () => {
+    parentPort.postMessage(
+        run()
+    );
 })
 
-function run(jsonArray, mediaTypeClass) {
-    return new Promise((ok) => {
-        let db = Database.Get()
-        db.getLock().then(release => {
-            db.fromJson(workerData)
-            /** @type {[Media]} */
-            let result = [];
-            jsonArray.forEach(json => {
-                result.push(mediaTypeClass.fromJson(db.add(mediaTypeClass.fromJson(json))))
-            })
-            release()
-            ok(result.map(media => media.toJson()))
-        })
-    });
+// We got to put Database interaction logic here: it's too heavy to 
+// place it in the main-thread (may cause a thread-lock!!)
+function run() {
+    let {
+        jsonDatabase,
+        jsonRequest,
+        iMediaCounter,
+        sMediaType, } = workerData
+    let db = Database.Get()
+    let mediaTypeClass = TYPES_CLASS[sMediaType];
+    let result = null;
+    db.fromJson(jsonDatabase)
+    Media.setID(iMediaCounter);
+
+    result = {
+        mediaItems: jsonRequest.map(jsonObject => db.add(mediaTypeClass.fromJson(jsonObject))),
+        iMediaCounter: Media.ID,
+        jsonDatabase: db.serialize()
+    }
+
+
+    return result;
 }

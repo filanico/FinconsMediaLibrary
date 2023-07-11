@@ -1,5 +1,5 @@
 const { Database } = require("./Database");
-const { Series, TvShow, Season, Episode, Movie, MultiSeasonMedia } = require("./Media");
+const { Series, TvShow, Season, Episode, Movie, MultiSeasonMedia, Media } = require("./Media");
 const { CLASS_TYPES } = require("./utils/maps");
 const { Worker } = require('worker_threads')
 
@@ -39,13 +39,21 @@ function batchPost(mediaTypeClass) {
     return (req, res) => {
         let db = Database.Get();
         db.getLock().then(release => {
-            let worker = new Worker('./workers/batchPost', { workerData: db.serialize() });
+            let worker = new Worker('./workers/batchPost', {
+                workerData: {
+                    jsonDatabase: db.serialize(),
+                    jsonRequest: req.body,
+                    iMediaCounter: Media.ID,
+                    sMediaType: CLASS_TYPES[mediaTypeClass]
+                }
+            });
             worker.on('message', (result) => {
-                db.fromJson(result)
-                res.send(result);
+                db.fromJson(result.jsonDatabase)
+                Media.setID(result.iMediaCounter)
+                res.send(result.mediaItems);
                 release()
             });
-            worker.postMessage([req.body, CLASS_TYPES[mediaTypeClass]]);
+            worker.postMessage([])
         })
     }
 }

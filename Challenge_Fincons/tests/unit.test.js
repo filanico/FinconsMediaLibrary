@@ -3,11 +3,11 @@ const { Movie, Episode, Season, Media, Series, TvShow } = require('../Media')
 const { Database } = require('../Database')
 
 beforeEach(() => {
-    Media.resetCounter();
+    Media.resetID();
 })
 
 afterEach(() => {
-    Media.resetCounter();
+    Media.resetID();
 })
 
 describe("Media item", () => {

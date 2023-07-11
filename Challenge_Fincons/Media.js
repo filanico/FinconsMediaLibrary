@@ -62,7 +62,7 @@ class Media {
         return jsonObject ? new Class(jsonObject) : null
     }
 
-    static resetCounter() {
+    static resetID() {
         Media.#ID = 1;
     }
 }

@@ -50,7 +50,7 @@ class Database {
     /**
      * 
      * @param {Media} media 
-     * @returns {Media}
+     * @returns {JsonArray}
      */
     add(media) {
         this._data.push(media)
