@@ -125,7 +125,7 @@ class MultiEpisodeMedia extends Media {
     }
 
     /**
-     * @param episodes {[Episode]} 
+     * @param episodes {[JsonObject]} 
      */
     appendEpisodes(episodes) {
         this.children = [...this.children, ...episodes.map(_json => Episode.fromJson(_json))]

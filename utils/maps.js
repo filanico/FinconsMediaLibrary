@@ -21,7 +21,33 @@ const TYPE_ROUTE = {
     [Media.TYPE_MOVIE]: 'movies',
     [Media.TYPE_SEASON]: 'seasons',
     [Media.TYPE_SERIES]: 'series',
-    [Media.TYPE_TVSHOW]: 'tv-show',
+    [Media.TYPE_TVSHOW]: 'tv-shows',
 }
 
-module.exports = { CLASS_TYPES, TYPES_CLASS, TYPE_ROUTE }
+/**
+ * 
+ * @param {string} routeName 
+ * @returns {string}
+ */
+function routeGroupToMediaType(routeName) {
+    let [mediaType] = Object.entries(TYPE_ROUTE)
+        .filter(pair => {
+            let [mediaType, _routeGroupName] = pair;
+            return _routeGroupName === routeName
+        })
+        .map(pair => {
+            let [mediaType, _routeGroupName] = pair;
+            return mediaType
+        })
+    return mediaType
+}
+/**
+ * 
+ * @param {string} routeName 
+ * @returns {string}
+ */
+function mediaTypeToRouteGroup(mediaType) {
+    return TYPE_ROUTE[mediaType];
+}
+
+module.exports = { CLASS_TYPES, TYPES_CLASS, TYPE_ROUTE, routeGroupToMediaType, mediaTypeToRouteGroup }

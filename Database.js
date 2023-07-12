@@ -59,9 +59,12 @@ class Database {
     /**
      * 
      * @param {number} id 
+     * @returns {Media} 
      */
     remove(id) {
+        let deletingItem = this.find(id)
         this._data = this._data.filter(item => item.id != id)
+        return deletingItem
     }
 
     /**
@@ -137,7 +140,7 @@ class Database {
         return await this.#lock.acquire();
     }
 
-    healthCheck(){
+    healthCheck() {
         return ({
             itemsCount: this._data.length
         })

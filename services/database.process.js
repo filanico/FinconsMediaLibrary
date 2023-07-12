@@ -1,4 +1,5 @@
 const { Database } = require("../Database");
+const { MultiEpisodeMedia, MultiSeasonMedia } = require("../Media");
 const { TYPES_CLASS } = require("../utils/maps");
 
 /** @type {Database} */
@@ -14,11 +15,26 @@ let processors = {
     'batchDelete': ({ action, payload }) => {
         process.send({ replyTo: action, status: "done", payload: payload.map(jsonObject => db.remove(jsonObject.id)) })
     },
-    'batchUpdate': ({ action, payload }) => {
-        process.send({ replyTo: action, status: "done", payload: payload.map(jsonObject => db.update(jsonObject.id, jsonObject)) })
+    'batchUpdate': ({ action, payload, mediaTypeClass }) => {
+        process.send({ replyTo: action, status: "done", payload: payload.map(jsonObject => db.update(jsonObject.id, mediaTypeClass.fromJson(jsonObject))) })
+    },
+    'appendEpisodes': ({ action, urlParams, payload, mediaTypeClass }) => {
+        /** @type {MultiEpisodeMedia} */
+        let mediaParent = db.find(urlParams.id)
+        mediaParent.appendEpisodes(payload.map(_jsonObject => db.find(_jsonObject.id).toJson()))
+        process.send({ replyTo: action, status: "done", payload: mediaParent.toJson() })
+    },
+    'appendSeasons': ({ action, urlParams, payload, mediaTypeClass }) => {
+        /** @type {MultiSeasonMedia} */
+        let mediaParent = db.find(urlParams.id)
+        mediaParent.appendSeasons(payload.map(_jsonObject => db.find(_jsonObject.id).toJson()))
+        process.send({ replyTo: action, status: "done", payload: mediaParent.toJson() })
     },
     'getAll': ({ action, mediaTypeClass }) => {
         process.send({ replyTo: action, status: "done", payload: db.findAllOf(mediaTypeClass) })
+    },
+    'deleteAll': ({ action, payload }) => {
+        process.send({ replyTo: action, status: "done", payload: payload.map(jsonObject => db.remove(jsonObject.id)) })
     },
     'get': ({ action, urlParams }) => {
         process.send({ replyTo: action, status: "done", payload: db.find(urlParams.id) })

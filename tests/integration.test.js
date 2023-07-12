@@ -10,83 +10,91 @@ const mediaTypes = Media.TYPES
 /** @type {ChildProcess} */
 let pDb = null;
 
-beforeEach((done) => {
+beforeAll((done) => {
     pDb = fork('./services/database.process')
-    pDb.on('message', ({ replyTo }) => { 
-        if( replyTo === 'init'){
+    pDb.on('message', ({ replyTo }) => {
+        if (replyTo === 'init') {
             done()
         }
     });
     pDb.send({ action: 'init' })
 })
 
-afterEach(() => {
+afterAll(() => {
     pDb.kill()
 })
 
-/**
- * 
- * @returns {ChildProcess}
- */
-function initDbProcess() {
+function queryDb(message) {
     return new Promise((ok) => {
-        if (pDb === null) {
-            pDb = fork('./services/database.process')
-            pDb.on('message', ({ replyTo, status }) => {
-                if (replyTo === 'init') {
-                    ok(pDb);
-                }
-            })
-            pDb.send({ action: 'init' })
-        } else {
-            ok(pDb);
-        }
+        pDb.on('message', ({ replyTo, payload }) => {
+            if (replyTo === message.action) {
+                ok({ payload })
+            }
+        });
+        pDb.send(message)
     })
 }
+
 
 describe("Database instance", () => {
     test("online", (done) => {
         let action = 'healthCheck';
-        pDb.on('message', ({ replyTo, payload }) => { 
-            if( replyTo === action){
-                // expect(itemsCount in payload.status).toBeTruthy()
-                try {
-                    expect(payload.status.itemsCount).toBe(0)   
-                } catch (error) {
-                    expect(error).toBe(1)
-                } finally {
-                    done()
-                }
+        queryDb({ action }).then(({ payload }) => {
+            try {
+                expect(payload.status.itemsCount).toBe(0)
+            } catch (error) {
+                expect(error).toBe(1)
+            } finally {
+                done()
             }
-        });
-         pDb.send({ action })
+        })
     })
 });
-describe("When creating and getting a media by id of ", () => {
-    Promise.all(mediaTypes.map((mediaType) => {
-        new Promise((testOk) => {
-            test(mediaType + " returns 200", async () => {
-                let dbResponse = new Promise((ok) => {
-                    let mediaTypeClass = TYPES_CLASS[mediaType]
-                    let message = { action: 'post', mediaType, payload: (new mediaTypeClass()).toJson() }
-                    pDb.on('message', async ({ replyTo, payload }) => {
-                        let mediaRouteName = TYPE_ROUTE[mediaType]
-                        let response = await request(app)
-                            .get(["", mediaRouteName, media.id].join("/"))
-                            .expect(200);
-                        db.remove(media.id);
-                        let json = response.body;
-                        expect(json.id).toBe(media.id)
-                        ok()
-                    })
-                    pDb.send(message)
-                });
-                await dbResponse;
-                testOk()
-            })
-        })
 
-    }))
+
+describe("When creating and getting a media by id of ", () => {
+    // let mediaType = 'SERIES';
+    mediaTypes.forEach(mediaType => {
+        test(mediaType + " returns 200", (done) => {
+            let mediaTypeClass = TYPES_CLASS[mediaType]
+            let message = { action: 'post', mediaType, payload: (new mediaTypeClass()).toJson() }
+            queryDb(message).then(({ payload }) => {
+                let mediaRouteName = TYPE_ROUTE[mediaType]
+                request(app)
+                    .get(["", mediaRouteName, payload.id].join("/"))
+                    .expect(200)
+                    .then((response) => {
+                        let json = response.body;
+                        expect(json.id).toBe(payload.id)
+                        done()
+                    })
+                    ;
+            }).catch(error => expect(error).toBe(0))
+        })
+    });
+    // Promise.all(mediaTypes.map((mediaType) => {
+    // new Promise((testOk) => {
+    //     test(mediaType + " returns 200", async () => {
+    //         let dbResponse = new Promise((ok) => {
+    //             let mediaTypeClass = TYPES_CLASS[mediaType]
+    //             let message = { action: 'post', mediaType, payload: (new mediaTypeClass()).toJson() }
+    //             pDb.on('message', async ({ replyTo, payload }) => {
+    //                 let mediaRouteName = TYPE_ROUTE[mediaType]
+    //                 let response = await request(app)
+    //                     .get(["", mediaRouteName, media.id].join("/"))
+    //                     .expect(200);
+    //                 db.remove(media.id);
+    //                 let json = response.body;
+    //                 expect(json.id).toBe(media.id)
+    //                 ok()
+    //             })
+    //             pDb.send(message)
+    //         });
+    //         await dbResponse;
+    //         testOk()
+    //     })
+    // })
+    // }))
 })
 describe("When updating media of type", () => {
     Object.entries(TYPES_CLASS).forEach(([mediaType, mediaTypeClass]) => {
