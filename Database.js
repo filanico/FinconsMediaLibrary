@@ -136,6 +136,12 @@ class Database {
     async getLock() {
         return await this.#lock.acquire();
     }
+
+    healthCheck(){
+        return ({
+            itemsCount: this._data.length
+        })
+    }
 }
 
 module.exports = { Database }

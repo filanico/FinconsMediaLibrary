@@ -32,6 +32,9 @@ let processors = {
     'update': ({ action, mediaTypeClass, payload }) => {
         process.send({ replyTo: action, status: "done", payload: db.update(payload.id, mediaTypeClass.fromJson(payload)) })
     },
+    'healthCheck': ({ action }) => {
+        process.send({ replyTo: action, payload: { status: db.healthCheck() } })
+    }
 }
 
 
