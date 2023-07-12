@@ -4,8 +4,9 @@ const { TYPES_CLASS } = require("../utils/maps");
 /** @type {Database} */
 let db = null;
 let processors = {
-    'init': () => {
+    'init': ({ action }) => {
         db = Database.Get();
+        process.send({ replyTo: action, status: 'done' })
     },
     'batchPost': ({ action, payload, mediaTypeClass }) => {
         process.send({ replyTo: action, status: "done", payload: payload.map(jsonObject => db.add(mediaTypeClass.fromJson(jsonObject))) })
@@ -35,9 +36,14 @@ let processors = {
 
 
 async function processMessage(params) {
-    let release = await db.getLock();
-    processors[params.action](params);
-    release()
+    let release = null
+    if (params.action !== 'init') {
+        release = await db.getLock();
+        processors[params.action](params);
+        release()
+    } else {
+        processors[params.action](params);
+    }
 }
 
 process.on("message", async (message) => {

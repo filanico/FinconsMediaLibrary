@@ -23,6 +23,7 @@ if (process.argv.length === 3) {
             });
             break;
         case 'routes':
+            build_routes_handlers(app, null)
             print_routes_list(app)
             break;
     }

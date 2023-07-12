@@ -16,4 +16,12 @@ const TYPES_CLASS = {
     [Media.TYPE_TVSHOW]: TvShow,
 }
 
-module.exports = { CLASS_TYPES, TYPES_CLASS }
+const TYPE_ROUTE = {
+    [Media.TYPE_EPISODE]: 'episodes',
+    [Media.TYPE_MOVIE]: 'movies',
+    [Media.TYPE_SEASON]: 'seasons',
+    [Media.TYPE_SERIES]: 'series',
+    [Media.TYPE_TVSHOW]: 'tv-show',
+}
+
+module.exports = { CLASS_TYPES, TYPES_CLASS, TYPE_ROUTE }
