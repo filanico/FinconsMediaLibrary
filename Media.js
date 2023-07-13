@@ -130,6 +130,11 @@ class MultiEpisodeMedia extends Media {
     appendEpisodes(episodes) {
         this.children = [...this.children, ...episodes.map(_json => Episode.fromJson(_json))]
     }
+    /**
+     * 
+     * @params {[JsonObject]]} episodes 
+     * @returns {[JsonObject]]} 
+     */
     detachEpisodes(episodes) {
         this.children = [...this.children.filter(_episodes => !episodes.map(deletingEpisode => deletingEpisode.id).includes(_episodes.id))]
     }

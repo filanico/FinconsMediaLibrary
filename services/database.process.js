@@ -30,6 +30,18 @@ let processors = {
         mediaParent.appendSeasons(payload.map(_jsonObject => db.find(_jsonObject.id).toJson()))
         process.send({ replyTo: action, status: "done", payload: mediaParent.toJson() })
     },
+    'detachEpisodes': ({ action, urlParams, payload, mediaTypeClass }) => {
+        /** @type {MultiEpisodeMedia} */
+        let mediaParent = db.find(urlParams.id)
+        mediaParent.detachEpisodes(payload.map(_jsonObject => _jsonObject.id))
+        process.send({ replyTo: action, status: "done", payload: mediaParent.toJson() })
+    },
+    'detachSeasons': ({ action, urlParams, payload, mediaTypeClass }) => {
+        /** @type {MultiSeasonMedia} */
+        let mediaParent = db.find(urlParams.id)
+        mediaParent.detachSeasons(payload.map(_jsonObject => _jsonObject.id))
+        process.send({ replyTo: action, status: "done", payload: mediaParent.toJson() })
+    },
     'getAll': ({ action, mediaTypeClass }) => {
         process.send({ replyTo: action, status: "done", payload: db.findAllOf(mediaTypeClass) })
     },

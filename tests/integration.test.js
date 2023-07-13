@@ -35,26 +35,9 @@ function queryDb(message) {
     })
 }
 
-
-describe("Database instance", () => {
-    test("online", (done) => {
-        let action = 'healthCheck';
-        queryDb({ action }).then(({ payload }) => {
-            try {
-                expect(payload.status.itemsCount).toBe(0)
-            } catch (error) {
-                expect(error).toBe(1)
-            } finally {
-                done()
-            }
-        })
-    })
-});
-
-
 describe("When creating and getting a media by id of ", () => {
     // let mediaType = 'SERIES';
-    mediaTypes.forEach(mediaType => {
+    [mediaTypes].forEach(mediaType => {
         test(mediaType + " returns 200", (done) => {
             let mediaTypeClass = TYPES_CLASS[mediaType]
             let message = { action: 'post', mediaType, payload: (new mediaTypeClass()).toJson() }
@@ -96,6 +79,23 @@ describe("When creating and getting a media by id of ", () => {
     // })
     // }))
 })
+
+describe("Database instance", () => {
+    test("online", (done) => {
+        let action = 'healthCheck';
+        queryDb({ action }).then(({ payload }) => {
+            try {
+                expect(payload.status.itemsCount).toBe(0)
+            } catch (error) {
+                expect(error).toBe(1)
+            } finally {
+                done()
+            }
+        })
+    })
+});
+
+
 describe("When updating media of type", () => {
     Object.entries(TYPES_CLASS).forEach(([mediaType, mediaTypeClass]) => {
         test(mediaType, async () => {

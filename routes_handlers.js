@@ -38,10 +38,9 @@ async function db(params) {
     return await promise
 }
 
-function dbSendRequest({ parentMediaTypeClass, mediaTypeClass, action }) {
+function dbSendRequest({ mediaTypeClass, action }) {
     return async (req, res) => {
         let jsonResponse = await db({
-            parentMediaType: CLASS_TYPES[parentMediaTypeClass],
             mediaType: CLASS_TYPES[mediaTypeClass],
             payload: req.body,
             urlParams: req.params,
@@ -58,6 +57,8 @@ function dbSendRequest({ parentMediaTypeClass, mediaTypeClass, action }) {
         }
     }
 }
+
+
 
 function post(mediaTypeClass) {
     return dbSendRequest({ mediaTypeClass, action: 'post' })
@@ -92,94 +93,94 @@ function getAll(mediaTypeClass) {
 function deleteAll(mediaTypeClass) {
     return dbSendRequest({ mediaTypeClass, action: 'deleteAll' })
 }
-function appendEpisodes(parentMediaTypeClass, mediaTypeClass) {
-    return dbSendRequest({ parentMediaTypeClass, mediaTypeClass, action: 'appendEpisodes' })
+function appendEpisodes(mediaTypeClass) {
+    return dbSendRequest({ mediaTypeClass, action: 'appendEpisodes' })
 }
-function detachEpisodes(parentMediaTypeClass, mediaTypeClass) {
-    return dbSendRequest({ parentMediaTypeClass, mediaTypeClass, action: 'detachEpisodes' })
+function detachEpisodes(mediaTypeClass) {
+    return dbSendRequest({ mediaTypeClass, action: 'detachEpisodes' })
 }
-function updateEpisodes(parentMediaTypeClass, mediaTypeClass) {
-    return dbSendRequest({ parentMediaTypeClass, mediaTypeClass, action: 'updateEpisodes' })
+function updateEpisodes(mediaTypeClass) {
+    return dbSendRequest({ mediaTypeClass, action: 'updateEpisodes' })
 }
-function appendSeasons(parentMediaTypeClass, mediaTypeClass) {
-    return dbSendRequest({ parentMediaTypeClass, mediaTypeClass, action: 'appendSeasons' })
+function appendSeasons(mediaTypeClass) {
+    return dbSendRequest({ mediaTypeClass, action: 'appendSeasons' })
 }
-function detachSeasons(parentMediaTypeClass, mediaTypeClass) {
-    return dbSendRequest({ parentMediaTypeClass, mediaTypeClass, action: 'detachSeasons' })
+function detachSeasons(mediaTypeClass) {
+    return dbSendRequest({ mediaTypeClass, action: 'detachSeasons' })
 }
-function updateSeasons(parentMediaTypeClass, mediaTypeClass) {
-    return dbSendRequest({ parentMediaTypeClass, mediaTypeClass, action: 'updateSeasons' })
-}
-
-
-function appendSeasons() {
-    return (req, res) => {
-        let seasons = req.body;
-        let db = Database.Get()
-        db.getLock().then(release => {
-            /** @type {MultiSeasonMedia} */
-            let masterItem = db.find(req.params.id)
-            masterItem.appendSeasons(seasons);
-            release();
-            res.send(masterItem.toJson())
-        });
-    };
-}
-function detachSeasons() {
-    return (req, res) => {
-        let seasons = req.body;
-        let db = Database.Get()
-        db.getLock().then(release => {
-            /** @type {MultiSeasonMedia} */
-            let series = db.find(req.params.id)
-            series.detachSeasons(seasons);
-            release();
-            res.send(series.toJson())
-        });
-    };
-}
-function updateSeasons() {
-    return (req, res) => {
-        let seasons = req.body;
-        let db = Database.Get()
-        db.getLock().then(release => {
-            /** @type {MultiSeasonMedia} */
-            let series = db.find(req.params.id)
-            series.updateSeasons(seasons);
-            release();
-            res.send(series.toJson())
-        });
-    };
+function updateSeasons(mediaTypeClass) {
+    return dbSendRequest({ mediaTypeClass, action: 'updateSeasons' })
 }
 
 
-function detachEpisodes() {
-    return (req, res) => {
-        let episodes = req.body;
-        let db = Database.Get()
-        db.getLock().then(release => {
-            /** @type {MultiEpisodeMedia} */
-            let masterItem = db.find(req.params.id)
-            masterItem.detachEpisodes(episodes);
-            release();
-            res.send(masterItem.toJson())
-        });
-    };
-}
+// function appendSeasons() {
+//     return (req, res) => {
+//         let seasons = req.body;
+//         let db = Database.Get()
+//         db.getLock().then(release => {
+//             /** @type {MultiSeasonMedia} */
+//             let masterItem = db.find(req.params.id)
+//             masterItem.appendSeasons(seasons);
+//             release();
+//             res.send(masterItem.toJson())
+//         });
+//     };
+// }
+// function detachSeasons() {
+//     return (req, res) => {
+//         let seasons = req.body;
+//         let db = Database.Get()
+//         db.getLock().then(release => {
+//             /** @type {MultiSeasonMedia} */
+//             let series = db.find(req.params.id)
+//             series.detachSeasons(seasons);
+//             release();
+//             res.send(series.toJson())
+//         });
+//     };
+// }
+// function updateSeasons() {
+//     return (req, res) => {
+//         let seasons = req.body;
+//         let db = Database.Get()
+//         db.getLock().then(release => {
+//             /** @type {MultiSeasonMedia} */
+//             let series = db.find(req.params.id)
+//             series.updateSeasons(seasons);
+//             release();
+//             res.send(series.toJson())
+//         });
+//     };
+// }
 
-function updateEpisodes() {
-    return (req, res) => {
-        let episodes = req.body;
-        let db = Database.Get()
-        db.getLock().then(release => {
-            /** @type {MultiEpisodeMedia} */
-            let masterItem = db.find(req.params.id)
-            masterItem.updateEpisodes(episodes);
-            release();
-            res.send(masterItem.toJson())
-        });
-    };
-}
+
+// function detachEpisodes() {
+//     return (req, res) => {
+//         let episodes = req.body;
+//         let db = Database.Get()
+//         db.getLock().then(release => {
+//             /** @type {MultiEpisodeMedia} */
+//             let masterItem = db.find(req.params.id)
+//             masterItem.detachEpisodes(episodes);
+//             release();
+//             res.send(masterItem.toJson())
+//         });
+//     };
+// }
+
+// function updateEpisodes() {
+//     return (req, res) => {
+//         let episodes = req.body;
+//         let db = Database.Get()
+//         db.getLock().then(release => {
+//             /** @type {MultiEpisodeMedia} */
+//             let masterItem = db.find(req.params.id)
+//             masterItem.updateEpisodes(episodes);
+//             release();
+//             res.send(masterItem.toJson())
+//         });
+//     };
+// }
 
 let routeGroupNames = Object.values(TYPE_ROUTE)
 let routeGroupHandlers = {};
